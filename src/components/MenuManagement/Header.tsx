@@ -10,11 +10,11 @@ function Header() {
 	const [isCategoryModalOpen, setIsCategoryModalOpen] = useState<boolean>(false);
 	const [isAddMenuModalOpen, setIsAddMenuModalOpen] = useState<boolean>(false);
 
-	const handleOpenCategoryModal = useCallback(() => {
+	const toggleCategoryModal = useCallback(() => {
 		setIsCategoryModalOpen((prev) => !prev);
 	}, []);
 
-	const handleOpenAddMenuModal = useCallback(() => {
+	const toggleAddMenuModal = useCallback(() => {
 		setIsAddMenuModalOpen((prev) => !prev);
 	}, []);
 
@@ -23,19 +23,19 @@ function Header() {
 			<HeadWrapper>
 				<ManagementHeader headerText="메뉴 관리">
 					<ButtonContainer>
-						<HeaderButton text="카테고리" decorate="is-selected" onClick={handleOpenCategoryModal} />
-						<HeaderButton text="메뉴추가" decorate="is-selected" onClick={handleOpenAddMenuModal} />
+						<HeaderButton text="카테고리" decorate="is-selected" onClick={toggleCategoryModal} />
+						<HeaderButton text="메뉴추가" decorate="is-selected" onClick={toggleAddMenuModal} />
 					</ButtonContainer>
 				</ManagementHeader>
 			</HeadWrapper>
 			{isCategoryModalOpen && (
 				<ModalPortal>
-					<CategoryManagementModal onClickToggleModal={handleOpenCategoryModal} />
+					<CategoryManagementModal onClickToggleModal={toggleCategoryModal} />
 				</ModalPortal>
 			)}
 			{isAddMenuModalOpen && (
 				<ModalPortal>
-					<AddMenuModal onClickToggleModal={handleOpenAddMenuModal} />
+					<AddMenuModal onClickToggleModal={toggleAddMenuModal} />
 				</ModalPortal>
 			)}
 		</>

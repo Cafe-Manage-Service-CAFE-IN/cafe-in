@@ -1,68 +1,45 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import styled from 'styled-components';
 import ModalInput from './ModalInput';
 import { ModalDefaultType } from '../../types/ModalOpenTypes';
 import { MenuType } from '../../types/menuMangementType';
-import { addDoc, collection } from 'firebase/firestore';
-import { db } from '../../firebase/firebaseConfig';
-import { getStorage, ref as storageRef, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { useRecoilValue } from 'recoil';
 import { selectedCategoryState } from '../../state/CategoryList';
+import { isValidMenu } from '../../utils/MenuManagement/checkMenu';
+import useInput from '../../hooks/useInput';
+import { addMenu, storeImage } from '../../utils/MenuManagement/menuDB';
+
+const initialMenu: MenuType = {
+	id: Date.now(),
+	name: '',
+	price: '',
+	category: '',
+	soldout: false,
+	imageUrl: '',
+	imageName: '',
+};
 
 function AddMenuModal({ onClickToggleModal }: ModalDefaultType) {
 	const backgroundRef = useRef<HTMLDivElement>(null);
+
 	const selectedCategory = useRecoilValue(selectedCategoryState);
 
-	const initialMenu: MenuType = {
-		id: 0,
-		name: '',
-		price: '',
+	const [menuInfo, bindMenu, resetMenu] = useInput<MenuType>({
+		...initialMenu,
 		category: selectedCategory,
-		soldout: false,
-		imageUrl: '',
-		imageName: '',
-	};
-
-	const menuItemRef = collection(db, 'menuItem');
-	const storage = getStorage();
-
-	const [menuInfo, setMenuInfo] = useState<MenuType>(initialMenu);
-	const [file, setFile] = useState<File>();
-
-	const validate = (): boolean => {
-		let isValid = true;
-		if (
-			menuInfo.name.trim().length === 0 ||
-			menuInfo.price.trim().length === 0 ||
-			menuInfo.category.trim().length === 0 ||
-			!menuInfo.imageName
-		) {
-			isValid = false;
-		}
-		return isValid;
-	};
-
-	const storeImg = async () => {
-		if (!file) return;
-		const imageRef = storageRef(storage, `images/${menuInfo.imageName}`);
-		const snapshot = await uploadBytes(imageRef, file);
-		const url = await getDownloadURL(snapshot.ref);
-		return url;
-	};
+	});
+	const [file, bindFile, resetFile] = useInput<File | null>(null);
 
 	const handleAddMenu = async () => {
-		const imageUrl = await storeImg();
-		addDoc(menuItemRef, {
-			...menuInfo,
-			id: Date.now(),
-			imageUrl: imageUrl,
-		});
-		setMenuInfo(initialMenu);
+		if (!file) return;
+		const imageUrl = await storeImage(file, menuInfo.imageName);
+		await addMenu(menuInfo, imageUrl);
+		resetMenu();
 		onClickToggleModal();
 	};
 
 	const handleDeleteMenu = () => {
-		setMenuInfo(initialMenu);
+		resetMenu();
 		onClickToggleModal();
 	};
 
@@ -71,13 +48,14 @@ function AddMenuModal({ onClickToggleModal }: ModalDefaultType) {
 			onClickToggleModal();
 		}
 	};
+
 	return (
 		<AddModalWrapper ref={backgroundRef} onClick={handleClickOutside}>
 			<AddModalContent>
-				<ModalInput menuInfo={menuInfo} setMenuState={setMenuInfo} setFile={setFile} />
+				<ModalInput menuInfo={menuInfo} bindMenu={bindMenu} bindFile={bindFile} resetFile={resetFile} />
 				<Guide>*모든 정보 입력 후 메뉴 추가가 가능합니다.</Guide>
 				<div>
-					<Button type="button" onClick={handleAddMenu} disabled={!validate() ? true : false}>
+					<Button type="button" onClick={handleAddMenu} disabled={!isValidMenu(menuInfo) ? true : false}>
 						추가
 					</Button>
 					<Button type="button" onClick={handleDeleteMenu}>

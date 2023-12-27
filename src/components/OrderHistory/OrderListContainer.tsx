@@ -53,6 +53,7 @@ function OrderListContainer({ isProgressMode }: ContainerPropType) {
 		const todayDate = Number(new Date(year, month, date));
 		fetchInProgress(todayDate);
 		fetchComplete(todayDate);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	return (

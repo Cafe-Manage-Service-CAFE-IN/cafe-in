@@ -1,37 +1,19 @@
 import React, { Dispatch, SetStateAction, useRef } from 'react';
 import { styled } from 'styled-components';
-import { db } from '../../firebase/firebaseConfig';
-import { getDocs, query, where, collection, deleteDoc } from 'firebase/firestore';
-import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage';
 import { MenuType } from '../../types/menuMangementType';
+import { deleteMenu } from '../../utils/MenuManagement/menuDB';
+
 interface DeletePropType {
 	menu: MenuType;
 	setIsDeleteModalOpen: Dispatch<SetStateAction<boolean>>;
 	onCloseModal: () => void;
 }
+
 function DeleteModal({ menu, setIsDeleteModalOpen, onCloseModal }: DeletePropType) {
 	const backgroundRef = useRef<HTMLDivElement>(null);
-	const menuItemRef = collection(db, 'menuItem');
-	const storage = getStorage();
-
-	const removeImg = async () => {
-		const deleteRef = storageRef(storage, `images/${menu.imageName}`);
-		deleteObject(deleteRef)
-			.then(() => {
-				return true;
-			})
-			.catch(() => {
-				alert('이미지 삭제에 실패했습니다.');
-				return;
-			});
-	};
 
 	const handleRemoveItem = async () => {
-		const menuData = await getDocs(query(menuItemRef, where('id', '==', menu.id)));
-		if (menuData.docs.length !== 0) {
-			await removeImg();
-			await deleteDoc(menuData.docs[0].ref);
-		}
+		await deleteMenu(menu);
 		onCloseModal();
 	};
 

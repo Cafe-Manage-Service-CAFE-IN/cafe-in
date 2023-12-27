@@ -5,7 +5,7 @@ import { db } from '../../firebase/firebaseConfig';
 import { collection, getDocs } from 'firebase/firestore';
 import { Item } from '../../types/Category';
 import { selectedItemsState } from '../../firebase/FirStoreDoc';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useSetRecoilState, useRecoilValue } from 'recoil';
 import { takeOutState } from '../../state/TakeOut';
 export interface OptionMenuProps {
 	clickedItem: Item | null;
@@ -15,7 +15,7 @@ export interface OptionMenuProps {
 function OptionMenu({ clickedItem, onClickToggleModal }: OptionMenuProps) {
 	const [options, setOptions] = useState<{ [key: string]: Option[] }>({});
 	const [activeOptions, setActiveOptions] = useState<string[]>([]);
-	const [selectedItems, setSelectedItems] = useRecoilState(selectedItemsState);
+	const setSelectedItems = useSetRecoilState(selectedItemsState);
 	const [selectedItemOptions, setSelectedItemOptions] = useState<Option[]>([]);
 	const takeOut = useRecoilValue(takeOutState);
 	useEffect(() => {
@@ -59,6 +59,7 @@ function OptionMenu({ clickedItem, onClickToggleModal }: OptionMenuProps) {
 		const additionalPrice = sortedOptions.reduce((acc, option) => acc + option.price, 0);
 
 		const newItem = {
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 			...clickedItem!,
 			options: optionsStr,
 			takeOut: takeOut,

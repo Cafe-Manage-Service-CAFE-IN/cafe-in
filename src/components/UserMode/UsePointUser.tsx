@@ -62,6 +62,7 @@ function UsePointUser({ onClickToggleModal }: ModalDefaultType) {
 	const onClickOpenModal = useCallback(async () => {
 		const isPointsValid = await checkPointsAndSetMessage();
 		setModalOpen(isPointsValid);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [phoneNumber]);
 
 	const handleUsePoints = async (usedPoints: number) => {

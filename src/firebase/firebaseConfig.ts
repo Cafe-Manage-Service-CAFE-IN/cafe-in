@@ -1,13 +1,13 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from '@firebase/firestore';
 const firebaseConfig = {
-	apiKey: 'AIzaSyDGboxjCphy2P576NfSf7n9bddxjcDSg3w',
-	authDomain: 'cafe-in-service.firebaseapp.com',
-	projectId: 'cafe-in-service',
-	storageBucket: 'cafe-in-service.appspot.com',
-	messagingSenderId: '229649891904',
-	appId: '1:229649891904:web:3e5fb1a7324a60f84315a5',
-	measurementId: 'G-E7FP3KMRBR',
+	apiKey: process.env.REACT_APP_API_KEY,
+	authDomain: process.env.REACT_APP_AUTH_DOMAIN,
+	projectId: process.env.REACT_APP_PROJECT_ID,
+	storageBucket: process.env.REACT_APP_STORAGE_BUCKET,
+	messagingSenderId: process.env.REACT_APP_MESSAGE_SENDER_ID,
+	appId: process.env.REACT_APP_APP_ID,
+	measurementId: process.env.REACT_APP_MEASUREMENT_ID,
 };
 
 export const app = initializeApp(firebaseConfig);

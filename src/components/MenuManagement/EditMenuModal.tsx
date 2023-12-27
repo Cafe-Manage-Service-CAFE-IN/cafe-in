@@ -2,11 +2,10 @@ import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import ModalInput from './ModalInput';
 import { MenuType } from '../../types/menuMangementType';
-import { db } from '../../firebase/firebaseConfig';
-import { getDocs, query, where, updateDoc, collection } from 'firebase/firestore';
-import { getStorage, ref as storageRef, getDownloadURL, uploadBytes } from 'firebase/storage';
 import ModalPortal from '../ModalPortal';
 import DeleteModal from './DeleteModal';
+import useInput from '../../hooks/useInput';
+import { storeImage, updateMenu } from '../../utils/MenuManagement/menuDB';
 
 interface EditModalPropType {
 	menu: MenuType;
@@ -14,45 +13,26 @@ interface EditModalPropType {
 }
 function EditMenuModal({ menu, onCloseModal }: EditModalPropType) {
 	const backgroundRef = useRef<HTMLDivElement>(null);
-	const [menuInfo, setMenuInfo] = useState<MenuType>(menu);
-	const [file, setFile] = useState<File>();
+	const [menuInfo, bindMenu, resetMenu] = useInput(menu);
+	const [file, bindFile, resetFile] = useInput<File | null>(null);
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
-	const menuItemRef = collection(db, 'menuItem');
-	const storage = getStorage();
-
-	const storeImg = async () => {
-		if (!file) return;
-		const imageRef = storageRef(storage, `images/${menuInfo.imageName}`);
-		const snapshot = await uploadBytes(imageRef, file);
-		const url = await getDownloadURL(snapshot.ref);
-		return url;
-	};
-
 	const handleEditMenu = async () => {
-		const imageUrl = await storeImg();
-		const menuData = await getDocs(query(menuItemRef, where('id', '==', menuInfo.id)));
-		if (menuData.docs.length !== 0) {
-			await updateDoc(menuData.docs[0].ref, {
-				id: menuInfo.id,
-				name: menuInfo.name,
-				price: menuInfo.price,
-				category: menuInfo.category,
-				imageName: menuInfo.imageName,
-				imageUrl: imageUrl ? imageUrl : menuInfo.imageUrl,
-				soldout: menuInfo.soldout,
-			});
+		if (!file) {
+			await updateMenu(menuInfo, '');
+		} else {
+			const imageUrl = await storeImage(file, menuInfo.imageName);
+			await updateMenu(menuInfo, imageUrl);
 		}
 		onCloseModal();
 	};
 
 	const handleRemoveMenu = () => {
-		console.log('delete menu');
 		setIsDeleteModalOpen(true);
 	};
 
 	const handleDeleteEdit = () => {
-		setMenuInfo(menu);
+		resetMenu();
 		onCloseModal();
 	};
 
@@ -65,7 +45,7 @@ function EditMenuModal({ menu, onCloseModal }: EditModalPropType) {
 		<>
 			<EditModalWrapper ref={backgroundRef} onClick={handleClickOutside}>
 				<EditModalContent>
-					<ModalInput menuInfo={menu} setMenuState={setMenuInfo} setFile={setFile} />
+					<ModalInput menuInfo={menu} bindMenu={bindMenu} bindFile={bindFile} resetFile={resetFile} />
 					<div>
 						<Button type="button" onClick={handleEditMenu}>
 							수정

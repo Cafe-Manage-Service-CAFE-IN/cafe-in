@@ -1,98 +1,50 @@
-import React, { ChangeEvent, useCallback, useState } from 'react';
+import { ChangeEvent } from 'react';
 import styled from 'styled-components';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { categoryListState, selectedCategoryState } from '../../state/CategoryList';
-import { db } from '../../firebase/firebaseConfig';
-import { deleteDoc, collection, getDocs, query, where, updateDoc } from 'firebase/firestore';
 import { menuListState } from '../../state/MenuListState';
 import { CategoryType } from '../../types/menuMangementType';
+import { checkDisabled } from '../../utils/Category/checkCategory';
+import useInput from '../../hooks/useInput';
+import { deleteCategory, editCategory, toggleOptionModal } from '../../utils/Category/categoryDB';
 
-interface CategoryItemPropType {
-	categoryItem: CategoryType;
-}
-function CategoryItem({ categoryItem }: CategoryItemPropType) {
+function CategoryItem({ categoryItem }: { categoryItem: CategoryType }) {
 	const { id, category, isShowOptionModal } = categoryItem;
-	const categoryListRef = collection(db, 'categoryList');
-	const menuItemRef = collection(db, 'menuItem');
 
 	const categoryList = useRecoilValue(categoryListState);
 	const menuList = useRecoilValue(menuListState);
 	const setSelectedCategory = useSetRecoilState(selectedCategoryState);
 
-	const [editedCategoryName, setEditedCategoryName] = useState<string>('');
-	const [editShowOptionModal, setEditShowOptionModal] = useState<boolean>(isShowOptionModal);
-	const [selectedId, setSelectedId] = useState<number>(0);
+	const [editedCategoryName, bindEdit, resetEdit] = useInput('');
+	const [editShowOptionModal, bindOption] = useInput(isShowOptionModal);
+	const [selectedId, bindId, resetId] = useInput(0);
 
-	const checkDisabled = useCallback(
-		(id: number) => {
-			const currentCategory = categoryList.filter((category) => category.id === id)[0];
-			const isContain = menuList.some((menu) => menu.category === currentCategory.category);
-			return isContain;
-		},
-		[categoryList, menuList],
-	);
-
-	const handleRemoveCategory = useCallback(
-		async (id: number) => {
-			const data = await getDocs(query(categoryListRef, where('id', '==', id)));
-			if (data.docs.length !== 0) {
-				await deleteDoc(data.docs[0].ref);
-			}
-			setSelectedCategory(categoryList[0].category);
-		},
-		[categoryList, categoryListRef, setSelectedCategory],
-	);
-
-	const handleEditCategoryName = (e: ChangeEvent<HTMLInputElement>) => {
-		setEditedCategoryName(e.target.value);
+	const removeCategory = async () => {
+		await deleteCategory(id);
+		setSelectedCategory(categoryList[0].category);
 	};
 
-	const handleClickEditButton = (id: number) => {
-		setEditedCategoryName('');
-		setSelectedId(id);
+	const clickEditButton = () => {
+		resetEdit();
+		bindId.setValue(id);
 	};
 
-	const handleStoreEdit = useCallback(
-		async (id: number) => {
-			if (!editedCategoryName.trim()) {
-				setSelectedId(0);
-				return;
-			}
-			const data = await getDocs(query(categoryListRef, where('id', '==', id)));
-			if (data.docs.length !== 0) {
-				await updateDoc(data.docs[0].ref, {
-					category: editedCategoryName,
-				});
-			}
-
-			const currentCategory = categoryList.filter((category) => category.id === id)[0].category;
-			const editMenuListDoc = await getDocs(query(menuItemRef, where('category', '==', currentCategory)));
-			if (editMenuListDoc.docs.length !== 0) {
-				editMenuListDoc.docs.forEach(async (doc) => {
-					await updateDoc(doc.ref, {
-						category: editedCategoryName,
-					});
-				});
-			}
-			setSelectedId(0);
-			setSelectedCategory(editedCategoryName);
-		},
-		[categoryList, categoryListRef, editedCategoryName, menuItemRef, setSelectedCategory],
-	);
-
-	const handleDeleteEdit = () => {
-		setSelectedId(0);
-	};
-
-	const handleChangeOptionModal = async (value: boolean, id: number) => {
-		setEditShowOptionModal((prev) => !prev);
-		const data = await getDocs(query(categoryListRef, where('id', '==', id)));
-		if (data.docs.length !== 0) {
-			await updateDoc(data.docs[0].ref, {
-				isShowOptionModal: value,
-			});
+	const storeEditName = async () => {
+		if (!editedCategoryName.trim()) {
+			resetId();
+			return;
 		}
+		await editCategory(id, category, editedCategoryName);
+		resetId();
+		setSelectedCategory(editedCategoryName);
 	};
+
+	const toggleOption = async (e: ChangeEvent<HTMLInputElement>) => {
+		bindOption.onChange(e);
+		await toggleOptionModal(e.currentTarget.checked, id);
+		setSelectedCategory(category);
+	};
+
 	return (
 		<>
 			<CategoryItemWrapper data-id={id}>
@@ -101,9 +53,7 @@ function CategoryItem({ categoryItem }: CategoryItemPropType) {
 					type="checkbox"
 					id={`${category}-option-checkbox`}
 					checked={editShowOptionModal}
-					onChange={(e: ChangeEvent<HTMLInputElement>) => {
-						handleChangeOptionModal(e.currentTarget.checked, id);
-					}}
+					onChange={toggleOption}
 				/>
 				{id === selectedId ? (
 					<>
@@ -113,33 +63,22 @@ function CategoryItem({ categoryItem }: CategoryItemPropType) {
 							id="editCategoryName"
 							placeholder={category}
 							value={editedCategoryName}
-							onChange={handleEditCategoryName}
+							onChange={bindEdit.onChange}
 						/>
-						<EditCategoryButton
-							type="button"
-							onClick={() => {
-								handleStoreEdit(id);
-							}}
-						>
+						<EditCategoryButton type="button" onClick={storeEditName}>
 							저장
 						</EditCategoryButton>
-						<button type="button" onClick={handleDeleteEdit}>
+						<button type="button" onClick={resetId}>
 							취소
 						</button>
 					</>
 				) : (
 					<>
 						<span>{category}</span>
-						<EditCategoryButton type="button" onClick={() => handleClickEditButton(id)}>
+						<EditCategoryButton type="button" onClick={clickEditButton}>
 							수정
 						</EditCategoryButton>
-						<button
-							type="button"
-							disabled={checkDisabled(id) ? true : false}
-							onClick={() => {
-								handleRemoveCategory(id);
-							}}
-						>
+						<button type="button" disabled={checkDisabled(id, categoryList, menuList)} onClick={removeCategory}>
 							삭제
 						</button>
 					</>

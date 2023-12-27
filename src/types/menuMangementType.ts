@@ -1,5 +1,3 @@
-import { Dispatch, SetStateAction } from 'react';
-
 export interface CategoryType {
 	id: number;
 	category: string;
@@ -14,10 +12,4 @@ export interface MenuType {
 	soldout: boolean;
 	imageUrl: string;
 	imageName: string;
-}
-
-export interface ModalInputPropType {
-	menuInfo: MenuType;
-	setMenuState: Dispatch<SetStateAction<MenuType>>;
-	setFile: Dispatch<SetStateAction<File | undefined>>;
 }
